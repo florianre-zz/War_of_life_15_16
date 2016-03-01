@@ -70,14 +70,14 @@ bloodlust(Player, Curr_state, New_state, Move) :-
 % Self Preservation
 
 self_preservation(Player, Curr_state, New_state, Move) :-
-  find_all_poss_blue_moves(Curr_state, Poss_moves),
+  find_all_poss_moves(Player, Curr_state, Poss_moves),
   best_move(self_preservation, Player, Curr_state, Poss_moves, _, Move, -64),
   new_board(Player, Move, Curr_state, New_state).
 
 % Land Grab
 
 land_grab(Player, Curr_state, New_state, Move) :-
-  find_all_poss_blue_moves(Curr_state, Poss_moves),
+  find_all_poss_moves(Player, Curr_state, Poss_moves),
   best_move(land_grab, Player, Curr_state, Poss_moves, _, Move, -64),
   new_board(Player, Move, Curr_state, New_state).
 
@@ -108,12 +108,6 @@ new_board(r, Move, [Curr_blue, Curr_red], [New_blue, New_red]) :-
   New_blue = Curr_blue,
   alter_board(Move, Curr_red, New_red).
 
-update_best_move(Num_opponent, Curr_smallest, New_smallest, Move1,
-                 Move2, New_best_move) :-
-  Num_opponent < Curr_smallest
-    -> (New_smallest is Num_opponent, New_best_move = Move1)
-    ; (New_smallest is Curr_smallest, New_best_move = Move2).
-
 % BLOODLUST
 %% base case
 best_move(bloodlust, _, _, [], Best_move, Best_move, _).
@@ -124,8 +118,9 @@ best_move(bloodlust, Player, Curr_state, [Head|Rest_moves], Move, Best_move,
   next_move_cranked(Player, Head, Curr_state, [Cranked_blue, Cranked_red]),
   (Player = b
     -> length(Cranked_red, Num_opponent) ; length(Cranked_blue, Num_opponent)),
-  update_best_move(Num_opponent, Curr_smallest, New_smallest, Head, Move,
-                   New_best_move),
+  (Curr_smallest > Num_opponent
+   -> New_smallest is Num_opponent, New_best_move = Head
+   ;  New_smallest is Curr_smallest, New_best_move = Move),
   best_move(bloodlust, Player, Curr_state, Rest_moves, New_best_move, Best_move,
             New_smallest).
 % SELF PRESERVATION
@@ -138,8 +133,9 @@ best_move(self_preservation, Player, Curr_state, [Head|Rest_moves], Move,
   next_move_cranked(Player, Head, Curr_state,[Cranked_blue, Cranked_red]),
   (Player = b
     -> length(Cranked_blue, Num_player) ; length(Cranked_red, Num_player)),
-  update_best_move(Curr_biggest, Num_player, New_biggest, Head, Move,
-                   New_best_move),
+  (Num_player > Curr_biggest
+    -> New_biggest is Num_player, New_best_move = Head
+    ;  New_biggest is Curr_biggest, New_best_move = Move),
   best_move(self_preservation, Player, Curr_state, Rest_moves, New_best_move,
             Best_move, New_biggest).
 % LAND GRAB
@@ -152,7 +148,8 @@ best_move(land_grab, Player, Curr_state, [Head|Rest_moves], Move, Best_move,
   length(Cranked_blue, Num_blue),
   length(Cranked_red, Num_red),
   (Player = b -> Diff is Num_blue - Num_red ; Diff is Num_red - Num_blue),
-  update_best_move(Biggest_diff, Diff, New_biggest_diff, Head, Move,
-                   New_best_move),
+  (Diff > Biggest_diff
+    -> New_biggest_diff is Diff, New_best_move = Head
+    ;  New_biggest_diff is Biggest_diff, New_best_move = Move),
   best_move(land_grab, Player, Curr_state, Rest_moves, New_best_move, Best_move,
             New_biggest_diff).
