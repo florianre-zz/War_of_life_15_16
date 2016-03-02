@@ -46,15 +46,11 @@ update_game_length_data(_, Prev_longest_game, Prev_shortest_game,
   Longest_game is max(Prev_longest_game, Num_moves),
   Shortest_game is min(Prev_shortest_game, Num_moves).
 
-update_wins(b, Curr_blue_wins, New_blue_wins, Curr_red_wins, New_red_wins) :-
-  New_blue_wins is Curr_blue_wins + 1,
-  New_red_wins is Curr_red_wins,!.
-update_wins(r, Curr_blue_wins, New_blue_wins, Curr_red_wins, New_red_wins) :-
-  New_blue_wins is Curr_blue_wins,
+update_wins(b, Curr_blue_wins, New_blue_wins, Curr_red_wins, Curr_red_wins) :-
+  New_blue_wins is Curr_blue_wins + 1,!.
+update_wins(r, Curr_blue_wins, Curr_blue_wins, Curr_red_wins, New_red_wins) :-
   New_red_wins is Curr_red_wins + 1,!.
-update_wins(_, Curr_blue_wins, New_blue_wins, Curr_red_wins, New_red_wins) :-
-  New_blue_wins is Curr_blue_wins,
-  New_red_wins is Curr_red_wins.
+update_wins(_, Curr_blue_wins, Curr_blue_wins, Curr_red_wins, Curr_red_wins).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% STRATEGIES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -218,6 +214,3 @@ best_move(max, Pl, D, Max_depth, Curr_state, [Head|Rest], Move, Best_move,
   % (Biggest_opponent_diff > Biggest_diff
   %  -> (New_best_move = Head, New_biggest_diff is Biggest_opponent_diff)
   %  ;  (New_best_move = Move, New_biggest_diff is Biggest_diff)),
-
-
-minimax_search(max, Player, D, Max_depth, Curr_state, [Head|Rest], ) :-
