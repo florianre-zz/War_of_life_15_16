@@ -40,9 +40,7 @@ update_averages(Prev_average_game_length, Num_moves, Prev_average_game_time, T,
   Average_game_time is T / Num_of_games + Prev_average_game_time.
 
 update_game_length_data('exhaust', Prev_longest_game, Prev_shortest_game,
-                        Longest_game, Shortest_game, _) :-
-  Longest_game is Prev_longest_game,
-  Shortest_game is Prev_shortest_game,!.
+                        Prev_longest_game, Prev_shortest_game, _) :- !.
 update_game_length_data(_, Prev_longest_game, Prev_shortest_game,
                         Longest_game, Shortest_game, Num_moves) :-
   Longest_game is max(Prev_longest_game, Num_moves),
@@ -79,6 +77,13 @@ self_preservation(Player, Curr_state, New_state, Move) :-
 land_grab(Player, Curr_state, New_state, Move) :-
   find_all_poss_moves(Player, Curr_state, Poss_moves),
   best_move(land_grab, Player, Curr_state, Poss_moves, _, Move, -64),
+  new_board(Player, Move, Curr_state, New_state).
+
+% Minimax
+
+minimax(Player, Curr_state, New_state, Move) :-
+  find_all_poss_moves(Player, Curr_state, Poss_moves),
+  best_move(max, Player, 1, 2, Curr_state, Poss_moves, _, Move, -64, _),
   new_board(Player, Move, Curr_state, New_state).
 
 % Helpers
@@ -153,3 +158,66 @@ best_move(land_grab, Player, Curr_state, [Head|Rest_moves], Move, Best_move,
     ;  New_biggest_diff is Biggest_diff, New_best_move = Move),
   best_move(land_grab, Player, Curr_state, Rest_moves, New_best_move, Best_move,
             New_biggest_diff).
+% MINIMAX
+%% base cases
+best_move(_, _, _, [], Best_move, Best_move, _).
+best_move(_, Pl, Max_depth, Max_depth, [Curr_blue, Curr_red], _, _, _, _,
+          Biggest_diff) :-
+  length(Curr_blue, Num_blue), length(Curr_red, Num_red),
+  (Pl = r
+     -> Biggest_diff is Num_red - Num_blue
+     ; Biggest_diff is Num_blue - Num_red).
+best_move(max, Pl, D, Max_depth, Curr_state, [Head|Rest], Move, Best_move,
+          Curr_diff, Biggest_diff) :-
+  % Play one of the possibles moves of Curr_state and crank it up
+  next_move_cranked(Player, Head, Curr_state, [Cranked_blue, Cranked_red]),
+  % Get Opponent
+  (Player = b -> Opponent = r ; Opponent = b),
+  % Find all possibles moves for Opponent from Cranked_state
+  find_all_poss_moves(Opponent, [Cranked_blue, Cranked_red],
+                      Opponent_poss_moves),
+  % If no opponent moves
+  (Opponent_poss_moves = []
+  % Then land grab
+    -> length(Cranked_blue, Num_blue),
+       length(Cranked_red, Num_red),
+       (Opponent = r
+        -> Worst_diff is Num_red - Num_blue ; Worst_diff is Num_blue - Num_red),
+  % Else continue searching
+    ; Next_D is D + 1,
+      best_move(min, Opponent, Next_D, Max_depth, Cranked_state,
+                Opponent_poss_moves, _, _, 64, Worst_diff)),
+  % Update difference and best move accordingly
+  (Worst_diff > Curr_diff
+   -> New_diff is Worst_diff, New_move = Head
+   ;  New_diff is Curr_diff, New_move = Move),
+  % Recurse
+  best_move(max, Pl, D, Max_depth, Curr_state, Rest, New_move, Best_move,
+            New_diff, Biggest_diff).
+
+
+
+
+
+  % best_move(minimax, Player, Curr_state, Rest, New_best_move, Best_move,
+  %           New_biggest_diff).
+  %
+  %
+  % next_move_cranked(Player, Head, Curr_state, Cranked_state),
+  % (Player = b -> Opponent = r; Opponent = b),
+  % find_all_poss_moves(Opponent, Cranked_state, Opponent_poss_moves),
+  % best_move(minimax, Opponent, Cranked_state, Opponent_poss_moves, _,
+  %           Best_opponent_move, -64),
+  % next_move_cranked(Opponent, Best_opponent_move, Cranked_state,
+  %                   [Opponent_cranked_blue, Opponent_cranked_red]),
+  % length(Opponent_cranked_blue, Num_blue),
+  % length(Opponent_cranked_red, Num_red),
+  % (Opponent = r
+  %   -> (Biggest_opponent_diff is Num_red - Num_blue)
+  %   ;  (Biggest_opponent_diff is Num_blue - Num_red)),
+  % (Biggest_opponent_diff > Biggest_diff
+  %  -> (New_best_move = Head, New_biggest_diff is Biggest_opponent_diff)
+  %  ;  (New_best_move = Move, New_biggest_diff is Biggest_diff)),
+
+
+minimax_search(max, Player, D, Max_depth, Curr_state, [Head|Rest], ) :-
