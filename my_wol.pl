@@ -1,8 +1,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TEST STRATEGY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Test strategy predicate
-test_strategy(Num_of_games, Player1_strat, Player2_strat) :-
-  get_strategy_data(Num_of_games, 0, Player1_strat, Player2_strat, Blue_wins,
+test_strategy(Num_of_games, Pl1_strat, Pl2_strat) :-
+  get_strategy_data(Num_of_games, 0, Pl1_strat, Pl2_strat, Blue_wins,
                     Red_wins, Longest_game, Shortest_game, Average_game_length,
                     Average_game_time),
   format('Blue wins:           ~w~n', [Blue_wins]),
@@ -17,15 +17,15 @@ test_strategy(Num_of_games, Player1_strat, Player2_strat) :-
 %% base case
 get_strategy_data(Num_of_games, Num_of_games, _, _,  0, 0, 0, 250, 0, 0).
 %% recursion
-get_strategy_data(Num_of_games, Num_simulations, Player1_strat, Player2_strat,
+get_strategy_data(Num_of_games, Num_simulations, Pl1_strat, Pl2_strat,
                   Blue_wins, Red_wins, Longest_game, Shortest_game,
                   Average_game_length, Average_game_time) :-
   statistics(runtime, [_,_]),
-  play(quiet, Player1_strat, Player2_strat, Num_moves, Winner),
+  play(quiet, Pl1_strat, Pl2_strat, Num_moves, Winner),
   statistics(runtime, [_,T]),
   New_num_simulations is Num_simulations + 1,
-  get_strategy_data(Num_of_games, New_num_simulations, Player1_strat,
-                    Player2_strat, Prev_blue_wins, Prev_red_wins,
+  get_strategy_data(Num_of_games, New_num_simulations, Pl1_strat,
+                    Pl2_strat, Prev_blue_wins, Prev_red_wins,
                     Prev_longest_game, Prev_shortest_game,
                     Prev_average_game_length, Prev_average_game_time),
   update_wins(Winner, Prev_blue_wins, Blue_wins, Prev_red_wins, Red_wins),
@@ -56,31 +56,31 @@ update_wins(_, Curr_blue_wins, Curr_blue_wins, Curr_red_wins, Curr_red_wins).
 
 % Bloodlust
 
-bloodlust(Player, Curr_state, New_state, Move) :-
-  find_all_poss_moves(Player, Curr_state, Poss_moves),
-  best_move(bloodlust, Player, Curr_state, Poss_moves, _, Move, 64),
-  new_board(Player, Move, Curr_state, New_state).
+bloodlust(Pl, Curr_state, New_state, Move) :-
+  find_all_poss_moves(Pl, Curr_state, Poss_moves),
+  best_move(bloodlust, Pl, Curr_state, Poss_moves, _, Move, 64),
+  new_board(Pl, Move, Curr_state, New_state).
 
 % Self Preservation
 
-self_preservation(Player, Curr_state, New_state, Move) :-
-  find_all_poss_moves(Player, Curr_state, Poss_moves),
-  best_move(self_preservation, Player, Curr_state, Poss_moves, _, Move, -64),
-  new_board(Player, Move, Curr_state, New_state).
+self_preservation(Pl, Curr_state, New_state, Move) :-
+  find_all_poss_moves(Pl, Curr_state, Poss_moves),
+  best_move(self_preservation, Pl, Curr_state, Poss_moves, _, Move, -64),
+  new_board(Pl, Move, Curr_state, New_state).
 
 % Land Grab
 
-land_grab(Player, Curr_state, New_state, Move) :-
-  find_all_poss_moves(Player, Curr_state, Poss_moves),
-  best_move(land_grab, Player, Curr_state, Poss_moves, _, Move, -64),
-  new_board(Player, Move, Curr_state, New_state).
+land_grab(Pl, Curr_state, New_state, Move) :-
+  find_all_poss_moves(Pl, Curr_state, Poss_moves),
+  best_move(land_grab, Pl, Curr_state, Poss_moves, _, Move, -64),
+  new_board(Pl, Move, Curr_state, New_state).
 
 % Minimax
 
-minimax(Player, Curr_state, New_state, Move) :-
-  find_all_poss_moves(Player, Curr_state, Poss_moves),
-  best_move(max, Player, 1, 2, Curr_state, Poss_moves, _, Move, -64, _),
-  new_board(Player, Move, Curr_state, New_state).
+minimax(Pl, Curr_state, New_state, Move) :-
+  find_all_poss_moves(Pl, Curr_state, Poss_moves),
+  best_move(max, Pl, 0, 2, Curr_state, Poss_moves, _, Move, -64, _),
+  new_board(Pl, Move, Curr_state, New_state).
 
 % Helpers
 
@@ -114,75 +114,74 @@ new_board(r, Move, [Curr_blue, Curr_red], [New_blue, New_red]) :-
 best_move(bloodlust, _, _, [], Best_move, Best_move, _).
 best_move(bloodlust, _, _, _, Best_move, Best_move, 0).
 %% recursion
-best_move(bloodlust, Player, Curr_state, [Head|Rest_moves], Move, Best_move,
+best_move(bloodlust, Pl, Curr_state, [Head|Rest_moves], Move, Best_move,
           Curr_smallest) :-
-  next_move_cranked(Player, Head, Curr_state, [Cranked_blue, Cranked_red]),
-  (Player = b
+  next_move_cranked(Pl, Head, Curr_state, [Cranked_blue, Cranked_red]),
+  (Pl = b
     -> length(Cranked_red, Num_opponent) ; length(Cranked_blue, Num_opponent)),
   (Curr_smallest > Num_opponent
    -> New_smallest is Num_opponent, New_best_move = Head
    ;  New_smallest is Curr_smallest, New_best_move = Move),
-  best_move(bloodlust, Player, Curr_state, Rest_moves, New_best_move, Best_move,
+  best_move(bloodlust, Pl, Curr_state, Rest_moves, New_best_move, Best_move,
             New_smallest).
 % SELF PRESERVATION
 %% base case
 best_move(self_preservation, _, _, [], Best_move, Best_move, _).
 best_move(self_preservation, _, _, _, Best_move, Best_move, 64).
 %% recursion
-best_move(self_preservation, Player, Curr_state, [Head|Rest_moves], Move,
+best_move(self_preservation, Pl, Curr_state, [Head|Rest_moves], Move,
           Best_move, Curr_biggest) :-
-  next_move_cranked(Player, Head, Curr_state,[Cranked_blue, Cranked_red]),
-  (Player = b
-    -> length(Cranked_blue, Num_player) ; length(Cranked_red, Num_player)),
-  (Num_player > Curr_biggest
-    -> New_biggest is Num_player, New_best_move = Head
+  next_move_cranked(Pl, Head, Curr_state,[Cranked_blue, Cranked_red]),
+  (Pl = b
+    -> length(Cranked_blue, Num_Pl) ; length(Cranked_red, Num_Pl)),
+  (Num_Pl > Curr_biggest
+    -> New_biggest is Num_Pl, New_best_move = Head
     ;  New_biggest is Curr_biggest, New_best_move = Move),
-  best_move(self_preservation, Player, Curr_state, Rest_moves, New_best_move,
+  best_move(self_preservation, Pl, Curr_state, Rest_moves, New_best_move,
             Best_move, New_biggest).
 % LAND GRAB
 %% base case
 best_move(land_grab, _, _, [], Best_move, Best_move, _).
 %% recursion
-best_move(land_grab, Player, Curr_state, [Head|Rest_moves], Move, Best_move,
+best_move(land_grab, Pl, Curr_state, [Head|Rest_moves], Move, Best_move,
           Biggest_diff) :-
-  next_move_cranked(Player, Head, Curr_state, [Cranked_blue, Cranked_red]),
+  next_move_cranked(Pl, Head, Curr_state, [Cranked_blue, Cranked_red]),
   length(Cranked_blue, Num_blue),
   length(Cranked_red, Num_red),
-  (Player = b -> Diff is Num_blue - Num_red ; Diff is Num_red - Num_blue),
+  (Pl = b -> Diff is Num_blue - Num_red ; Diff is Num_red - Num_blue),
   (Diff > Biggest_diff
     -> New_biggest_diff is Diff, New_best_move = Head
     ;  New_biggest_diff is Biggest_diff, New_best_move = Move),
-  best_move(land_grab, Player, Curr_state, Rest_moves, New_best_move, Best_move,
+  best_move(land_grab, Pl, Curr_state, Rest_moves, New_best_move, Best_move,
             New_biggest_diff).
 % MINIMAX
 %% base cases
-best_move(_, _, _, [], Best_move, Best_move, _).
+best_move(_, _, _, _, _, [], Best_move, Best_move, Best_diff, Best_diff).
 best_move(_, Pl, Max_depth, Max_depth, [Curr_blue, Curr_red], _, _, _, _,
           Biggest_diff) :-
   length(Curr_blue, Num_blue), length(Curr_red, Num_red),
-  (Pl = r
-     -> Biggest_diff is Num_red - Num_blue
-     ; Biggest_diff is Num_blue - Num_red).
+  (Pl = b
+     -> Biggest_diff is Num_blue - Num_red
+     ; Biggest_diff is Num_red - Num_blue).
+%% max
 best_move(max, Pl, D, Max_depth, Curr_state, [Head|Rest], Move, Best_move,
           Curr_diff, Biggest_diff) :-
   % Play one of the possibles moves of Curr_state and crank it up
-  next_move_cranked(Player, Head, Curr_state, [Cranked_blue, Cranked_red]),
+  next_move_cranked(Pl, Head, Curr_state, [Cranked_blue, Cranked_red]),
   % Get Opponent
-  (Player = b -> Opponent = r ; Opponent = b),
+  (Pl = b -> Opponent = r ; Opponent = b),
   % Find all possibles moves for Opponent from Cranked_state
-  find_all_poss_moves(Opponent, [Cranked_blue, Cranked_red],
-                      Opponent_poss_moves),
+  find_all_poss_moves(Opponent, [Cranked_blue, Cranked_red], Opponent_moves),
   % If no opponent moves
-  (Opponent_poss_moves = []
+  (Opponent_moves = []
   % Then land grab
-    -> length(Cranked_blue, Num_blue),
-       length(Cranked_red, Num_red),
+    -> length(Cranked_blue, Num_blue), length(Cranked_red, Num_red),
        (Opponent = r
-        -> Worst_diff is Num_red - Num_blue ; Worst_diff is Num_blue - Num_red),
+        -> Worst_diff is Num_red - Num_blue ; Worst_diff is Num_blue - Num_red)
   % Else continue searching
     ; Next_D is D + 1,
-      best_move(min, Opponent, Next_D, Max_depth, Cranked_state,
-                Opponent_poss_moves, _, _, 64, Worst_diff)),
+      best_move(min, Opponent, Next_D, Max_depth, [Cranked_blue, Cranked_red],
+                Opponent_moves, _, _, 64, Worst_diff)),
   % Update difference and best move accordingly
   (Worst_diff > Curr_diff
    -> New_diff is Worst_diff, New_move = Head
@@ -190,27 +189,29 @@ best_move(max, Pl, D, Max_depth, Curr_state, [Head|Rest], Move, Best_move,
   % Recurse
   best_move(max, Pl, D, Max_depth, Curr_state, Rest, New_move, Best_move,
             New_diff, Biggest_diff).
-
-
-
-
-
-  % best_move(minimax, Player, Curr_state, Rest, New_best_move, Best_move,
-  %           New_biggest_diff).
-  %
-  %
-  % next_move_cranked(Player, Head, Curr_state, Cranked_state),
-  % (Player = b -> Opponent = r; Opponent = b),
-  % find_all_poss_moves(Opponent, Cranked_state, Opponent_poss_moves),
-  % best_move(minimax, Opponent, Cranked_state, Opponent_poss_moves, _,
-  %           Best_opponent_move, -64),
-  % next_move_cranked(Opponent, Best_opponent_move, Cranked_state,
-  %                   [Opponent_cranked_blue, Opponent_cranked_red]),
-  % length(Opponent_cranked_blue, Num_blue),
-  % length(Opponent_cranked_red, Num_red),
-  % (Opponent = r
-  %   -> (Biggest_opponent_diff is Num_red - Num_blue)
-  %   ;  (Biggest_opponent_diff is Num_blue - Num_red)),
-  % (Biggest_opponent_diff > Biggest_diff
-  %  -> (New_best_move = Head, New_biggest_diff is Biggest_opponent_diff)
-  %  ;  (New_best_move = Move, New_biggest_diff is Biggest_diff)),
+%% min
+best_move(min, Pl, D, Max_depth, Curr_state, [Head|Rest], Move, Best_move,
+          Curr_diff, Smallest_diff) :-
+  % Play one of the possibles moves of Curr_state and crank it up
+  next_move_cranked(Pl, Head, Curr_state, [Cranked_blue, Cranked_red]),
+  % Get Opponent
+  (Pl = b -> Opponent = r ; Opponent = b),
+  % Find all possibles moves for Opponent from Cranked_state
+  find_all_poss_moves(Opponent, [Cranked_blue, Cranked_red], Opponent_moves),
+  % If no opponent moves
+  (Opponent_moves = []
+  % Then land grab
+    -> length(Cranked_blue, Num_blue), length(Cranked_red, Num_red),
+       (Opponent = r
+        -> Best_diff is Num_red - Num_blue ; Best_diff is Num_blue - Num_red)
+  % Else continue searching
+    ; Next_D is D + 1,
+      best_move(max, Opponent, Next_D, Max_depth, [Cranked_blue, Cranked_red],
+                Opponent_moves, _, _, -64, Best_diff)),
+  % Update difference and best move accordingly
+  (Best_diff < Curr_diff
+   -> New_diff is Best_diff, New_move = Head
+   ;  New_diff is Curr_diff, New_move = Move),
+  % Recurse
+  best_move(min, Pl, D, Max_depth, Curr_state, Rest, New_move, Best_move,
+            New_diff, Smallest_diff).
